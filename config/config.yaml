@@ -1,0 +1,10 @@
+auth:
+  WebAppInit: ""
+  tokenFile: "tokens.json"
+  folder: "config"
+
+settings:
+  delay: 3
+  tasks: true
+  farming: true
+  gaming: true
