@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number for this release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build:
@@ -20,10 +26,11 @@ jobs:
 
     - name: Build for all platforms
       run: |
-        GOOS=darwin GOARCH=amd64 go build -o blumfield-mac-amd64 .
-        GOOS=darwin GOARCH=arm64 go build -o blumfield-mac-arm64 .
-        GOOS=linux GOARCH=amd64 go build -o blumfield-linux-amd64 .
-        GOOS=windows GOARCH=amd64 go build -o blumfield-windows-amd64.exe .
+        VERSION=${{ github.event.inputs.version || github.ref_name }}
+        GOOS=darwin GOARCH=amd64 go build -o blumfield-mac-amd64-${VERSION} .
+        GOOS=darwin GOARCH=arm64 go build -o blumfield-mac-arm64-${VERSION} .
+        GOOS=linux GOARCH=amd64 go build -o blumfield-linux-amd64-${VERSION} .
+        GOOS=windows GOARCH=amd64 go build -o blumfield-windows-amd64-${VERSION}.exe .
 
     - name: Create Release
       id: create_release
@@ -31,8 +38,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.event.inputs.version || github.ref }}
+        release_name: Release ${{ github.event.inputs.version || github.ref }}
         draft: false
         prerelease: false
 
