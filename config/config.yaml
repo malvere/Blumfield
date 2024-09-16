@@ -4,6 +4,7 @@ auth:
   folder: "config"
 
 settings:
+  daemon: true
   delay: 3
   tasks: true
   farming: true

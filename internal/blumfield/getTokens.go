@@ -8,7 +8,7 @@ import (
 
 func (b *Blumfield) RenewAccessToken() error {
 	request := models.Query{
-		Query: b.config.Auth.WebAppInit,
+		Query: b.Config.Auth.WebAppInit,
 	}
 
 	resp, err := b.client.R().
@@ -26,10 +26,9 @@ func (b *Blumfield) RenewAccessToken() error {
 	token := resp.Result().(*models.BlumTokens)
 	b.BaseHeaders["Authorization"] = "Bearer " + token.Token.Access
 	b.Tokens = token
-	b.config.SaveTokens(&config.Tokens{
+	b.Config.SaveTokens(&config.Tokens{
 		Auth:    token.Token.Access,
 		Refresh: token.Token.Refresh,
 	})
-
 	return nil
 }

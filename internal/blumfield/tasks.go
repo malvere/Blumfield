@@ -3,24 +3,42 @@ package blumfield
 import (
 	"blumfield/internal/models"
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"time"
 )
 
-func (b *Blumfield) GetTasks() (*[]models.TasksResponse, error) {
+func (b *Blumfield) GetTasks(ctx context.Context) (*[]models.TasksResponse, error) {
 	tasks := []models.TasksResponse{}
-	_, err := b.client.R().
+
+	// Check if the context is already done before making the request
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	// Make the request and check for errors
+	resp, err := b.client.R().
 		SetHeaders(b.BaseHeaders).
+		SetContext(ctx). // Set context to handle cancellation
 		SetResult(&tasks).
 		Get(earnURL)
+
 	if err != nil {
 		return nil, err
+	}
+
+	// Optional: Check the response status code for additional error handling
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
 	}
 
 	return &tasks, nil
 }
 
 func (b *Blumfield) CompleteTasks(ctx context.Context, tasks *[]models.TasksResponse) {
+	if ctx.Err() != nil {
+		return
+	}
 	for _, response := range *tasks {
 		for _, section := range response.SubSections {
 			if section.Title != "Frens" && section.Title != "Farming" && section.Title != "New" {

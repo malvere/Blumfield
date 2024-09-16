@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -17,8 +18,9 @@ type Config struct {
 	} `yaml:"auth"`
 
 	Settings struct {
+		Daemon  bool `yaml:"daemon"`
 		Delay   int  `yaml:"delay"`
-		Tasks   int  `yaml:"tasks"`
+		Tasks   bool `yaml:"tasks"`
 		Farming bool `yaml:"farming"`
 		Gaming  bool `yaml:"gaming"`
 	} `yaml:"settings"`
@@ -41,6 +43,12 @@ func LoadConfig() (*Config, error) {
 
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, err
+	}
+	if envWebAppInit := os.Getenv("WEB_APP_INIT_DATA"); envWebAppInit != "" {
+		cfg.Auth.WebAppInit = envWebAppInit
+	}
+	if daemonMode := os.Getenv("DAEMON"); daemonMode != "" {
+		cfg.Settings.Daemon = isTruthy(daemonMode)
 	}
 
 	return &cfg, nil
@@ -79,4 +87,13 @@ func (c *Config) SaveTokens(tokens *Tokens) error {
 	}
 
 	return nil
+}
+
+func isTruthy(value string) bool {
+	switch strings.ToLower(value) {
+	case "true", "1", "t":
+		return true
+	default:
+		return false
+	}
 }

@@ -18,7 +18,7 @@ type Blumfield struct {
 	Tokens      *models.BlumTokens
 	log         *logrus.Logger
 	tools       *tools.Tools
-	config      *config.Config
+	Config      *config.Config
 }
 
 // copy(Telegram.WebApp.initData)
@@ -46,20 +46,18 @@ func NewBlumfield(log *logrus.Logger) (*Blumfield, error) {
 		client:      resty.New(),
 		log:         log,
 		tools:       tools.NewTools(),
-		config:      cfg,
+		Config:      cfg,
 		Tokens:      &models.BlumTokens{},
 	}, nil
 }
 
 func (b *Blumfield) LoadTokensFromFile() error {
-	tokens, err := b.config.LoadTokens()
-	if err != nil {
-		if err := jwts.ParseAndCheckToken(tokens.Auth); err != nil {
-			if err := b.RenewAccessToken(); err != nil {
-				return err
-			}
-			return errors.New("renewed tokens")
+	tokens, err := b.Config.LoadTokens()
+	if err != nil || jwts.ParseAndCheckToken(tokens.Auth) != nil {
+		if err := b.RenewAccessToken(); err != nil {
+			return err
 		}
+		return errors.New("renewed tokens")
 	}
 
 	b.BaseHeaders["Authorization"] = "Bearer " + tokens.Auth
@@ -74,53 +72,49 @@ func (b *Blumfield) Start(ctx context.Context) error {
 	if err := b.LoadTokensFromFile(); err != nil {
 		b.log.Error("Error loading tokens: ", err)
 	}
+	if ctx.Err() != nil {
+		return nil
+	}
 
 	// Checking daily claim
-	if err := b.LogBalance(); err != nil {
+	if err := b.LogBalance(ctx); err != nil {
 		b.log.Error("Error checking balance: ", err)
 	}
 	b.tools.Delay(2) // Time Delay
 	if err := b.ClaimCheckIn(); err != nil {
 		b.log.Error("Error claiming check-in reward: ", err)
 	}
+	if ctx.Err() != nil {
+		return nil
+	}
 
 	// Claiming farming
-	if err := b.LogBalance(); err != nil {
-		b.log.Error("Error checking balance: ", err)
+	if b.Config.Settings.Farming {
+		b.farmWithContext(ctx)
+		if ctx.Err() != nil {
+			return nil
+		}
+		b.tools.Delay(2)
 	}
-	b.tools.Delay(3) // Time Delay
-	farmClaim, err := b.ClaimFarming()
-	if err != nil {
-		b.log.Error("Error claiming farming: ", err)
-	}
-	if farmClaim.AvailableBalance == "" {
-		b.log.Info("Already claimed.")
-	} else {
-		b.log.Info("Claimed! Balance: ", farmClaim.AvailableBalance)
-	}
-
-	// Start farming
-	if err := b.LogBalance(); err != nil {
-		b.log.Error("Error checking balance: ", err)
-	}
-	b.tools.Delay(2) // Time Delay
-	farmStart, err := b.StartFarming()
-	if err != nil {
-		b.log.Error("Error starting farming: ", err)
-	}
-	b.log.Info("Farming: ", farmStart.EarningsRate)
 
 	// Complete tasks
-	tasks, err := b.GetTasks()
-	if err != nil {
-		b.log.Error("Error retrieving tasks: ", err)
+	if b.Config.Settings.Tasks {
+		tasks, err := b.GetTasks(ctx)
+		if err != nil {
+			b.log.Error("Error retrieving tasks: ", err)
+		}
+		if ctx.Err() != nil {
+			return nil
+		}
+		b.CompleteTasks(ctx, tasks)
+		b.tools.Delay(3)
 	}
-	b.CompleteTasks(ctx, tasks)
 
-	b.tools.Delay(3) // Time Delay
-	if err := b.LogBalance(); err != nil {
-		b.log.Error("Error checking balance: ", err)
+	if b.Config.Settings.Gaming {
+		if err := b.LogBalance(ctx); err != nil {
+			b.log.Error("Error checking balance: ", err)
+		}
+		b.PlayGame(ctx)
 	}
-	b.PlayGame(ctx)
 	return nil
 }

@@ -1,0 +1,77 @@
+name: Release Go App
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21  # Adjust this to your Go version
+
+    - name: Build for all platforms
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -o blumfield-mac-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -o blumfield-mac-arm64 .
+        GOOS=linux GOARCH=amd64 go build -o blumfield-linux-amd64 .
+        GOOS=windows GOARCH=amd64 go build -o blumfield-windows-amd64.exe .
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload macOS AMD64 Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./blumfield-mac-amd64
+        asset_name: blumfield-mac-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS ARM64 Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./blumfield-mac-arm64
+        asset_name: blumfield-mac-arm64
+        asset_content_type: application/octet-stream
+
+    - name: Upload Linux Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./blumfield-linux-amd64
+        asset_name: blumfield-linux-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload Windows Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./blumfield-windows-amd64.exe
+        asset_name: blumfield-windows-amd64.exe
+        asset_content_type: application/octet-stream
