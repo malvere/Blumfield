@@ -53,14 +53,14 @@ jobs:
         asset_name: blumfield-mac-amd64
         asset_content_type: application/octet-stream
 
-    - name: Upload macOS ARM64 Asset
+    - name: Upload macOS AMD64 Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./blumfield-mac-arm64
-        asset_name: blumfield-mac-arm64
+        asset_path: ./blumfield-mac-amd64-${{ github.event.inputs.version || github.ref_name }}
+        asset_name: blumfield-mac-amd64-${{ github.event.inputs.version || github.ref_name }}
         asset_content_type: application/octet-stream
 
     - name: Upload Linux Asset
@@ -69,8 +69,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./blumfield-linux-amd64
-        asset_name: blumfield-linux-amd64
+        asset_path: ./blumfield-linux-amd64-${{ github.event.inputs.version || github.ref_name }}
+        asset_name: blumfield-linux-amd64-${{ github.event.inputs.version || github.ref_name }}
         asset_content_type: application/octet-stream
 
     - name: Upload Windows Asset
@@ -79,6 +79,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./blumfield-windows-amd64.exe
-        asset_name: blumfield-windows-amd64.exe
+        asset_path: ./blumfield-windows-amd64-${{ github.event.inputs.version || github.ref_name }}.exe
+        asset_name: blumfield-windows-amd64-${{ github.event.inputs.version || github.ref_name }}.exe
         asset_content_type: application/octet-stream
