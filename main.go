@@ -3,6 +3,7 @@ package main
 import (
 	"blumfield/internal/blumfield"
 	"context"
+	"flag"
 	"math/rand/v2"
 	"os"
 	"os/signal"
@@ -13,6 +14,9 @@ import (
 )
 
 func main() {
+	cfg := flag.String("config", "config", "config file without extension (example: -config=dev)")
+	flag.Parse()
+
 	logger := &logrus.Logger{
 		Out:   os.Stdout,
 		Level: logrus.DebugLevel,
@@ -23,9 +27,8 @@ func main() {
 			PadLevelText:    true,
 		},
 	}
-
 	// Create Blumfield instance
-	blum, err := blumfield.NewBlumfield(logger)
+	blum, err := blumfield.NewBlumfield(logger, *cfg)
 	if err != nil {
 		logger.Fatal("Error creating Blumfield instance: ", err)
 	}

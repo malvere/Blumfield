@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"os"
+	"reflect"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -67,4 +69,40 @@ func (tools *Tools) DelayWithContext(ctx context.Context, duration int) bool {
 	case <-timer.C:
 		return true // Delay completed
 	}
+}
+
+func (t *Tools) GetRandomUserAgent(filepath string) (string, error) {
+	if err := checkTXTFile(filepath); err != nil {
+		useragent, err := saveUserAgent(filepath)
+		if err != nil {
+			return "", err
+		}
+		return useragent, err
+	}
+
+	useragent, err := os.ReadFile(filepath)
+	if err != nil {
+		return "nil", err
+	}
+	return string(useragent), err
+
+}
+
+func checkTXTFile(path string) error {
+	fileInfo, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return err
+	}
+	if fileInfo.Size() == 0 {
+		return fmt.Errorf("file is empty")
+	}
+	return nil
+}
+
+func saveUserAgent(file string) (string, error) {
+	fakeua, _ := faker.GetUserAgent().UserAgent(reflect.Value{})
+	if err := os.WriteFile(file, []byte(fakeua.(string)), 0644); err != nil {
+		return "", err
+	}
+	return fakeua.(string), nil
 }

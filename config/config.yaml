@@ -4,8 +4,9 @@ auth:
   folder: "config"
 
 settings:
-  daemon: false
-  delay: 3
-  tasks: true
-  farming: true
-  gaming: true
+  daemon: false         # Run perpetually (restart every 8 hrs)
+  randomAgent: true     # Randomise User-Agent
+  delay: 3              # Delay between tasks (in seconds)
+  tasks: true           # Enable or disable task automation
+  farming: true         # Enable or disable farming claims
+  gaming: true          # Enable or disable gaming automation

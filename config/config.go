@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,24 +19,33 @@ type Config struct {
 	} `yaml:"auth"`
 
 	Settings struct {
-		Daemon  bool `yaml:"daemon"`
-		Delay   int  `yaml:"delay"`
-		Tasks   bool `yaml:"tasks"`
-		Farming bool `yaml:"farming"`
-		Gaming  bool `yaml:"gaming"`
+		Daemon      bool `yaml:"daemon"`
+		RandomAgent bool `yaml:"random_agent"`
+		Delay       int  `yaml:"delay"`
+		Tasks       bool `yaml:"tasks"`
+		Farming     bool `yaml:"farming"`
+		Gaming      bool `yaml:"gaming"`
 	} `yaml:"settings"`
 }
 
 type Tokens struct {
-	Auth    string `json:"auth"`
-	Refresh string `json:"refresh"`
+	Auth     string `json:"auth"`
+	Refresh  string `json:"refresh"`
+	UserAgen string `json:"user_agent"`
 }
 
-func LoadConfig() (*Config, error) {
+func LoadConfig(configName string) (*Config, error) {
 	var cfg Config
 	viper.AddConfigPath(filepath.Join("config"))
-	viper.SetConfigName("config")
+	viper.SetConfigName(configName)
 	viper.SetConfigType("yaml")
+
+	flagWasSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "config" {
+			flagWasSet = true
+		}
+	})
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
@@ -44,13 +54,17 @@ func LoadConfig() (*Config, error) {
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
-	if envWebAppInit := os.Getenv("WEB_APP_INIT_DATA"); envWebAppInit != "" {
-		cfg.Auth.WebAppInit = envWebAppInit
+	switch flagWasSet {
+	case true:
+		return &cfg, nil
+	case false:
+		if envWebAppInit := os.Getenv("WEB_APP_INIT_DATA"); envWebAppInit != "" {
+			cfg.Auth.WebAppInit = envWebAppInit
+		}
+		if daemonMode := os.Getenv("DAEMON"); daemonMode != "" {
+			cfg.Settings.Daemon = isTruthy(daemonMode)
+		}
 	}
-	if daemonMode := os.Getenv("DAEMON"); daemonMode != "" {
-		cfg.Settings.Daemon = isTruthy(daemonMode)
-	}
-
 	return &cfg, nil
 }
 

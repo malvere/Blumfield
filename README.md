@@ -55,12 +55,14 @@ In the `config.yaml` file, you can set various parameters for the automation pro
 
 ```yaml
 auth:
-  WebAppInit: "your_copied_webapp_init_data"
+  WebAppInit: ""
   tokenFile: "tokens.json"
   folder: "config"
 
 settings:
-  delay: 100            # Delay between tasks (in seconds)
+  daemon: false         # Run perpetually (restart every 8 hrs)
+  randomAgent: true     # Randomise User-Agent
+  delay: 3              # Delay between tasks (in seconds)
   tasks: true           # Enable or disable task automation
   farming: true         # Enable or disable farming claims
   gaming: true          # Enable or disable gaming automation

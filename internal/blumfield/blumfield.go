@@ -23,7 +23,7 @@ type Blumfield struct {
 
 // copy(Telegram.WebApp.initData)
 // NewBlumfield constructor
-func NewBlumfield(log *logrus.Logger) (*Blumfield, error) {
+func NewBlumfield(log *logrus.Logger, configName string) (*Blumfield, error) {
 	// Define headers
 	baseHeaders := map[string]string{
 		"Accept":          "application/json, text/plain, */*",
@@ -36,7 +36,7 @@ func NewBlumfield(log *logrus.Logger) (*Blumfield, error) {
 		"Accept-Language": "ru",
 		"Lang":            "en",
 	}
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfig(configName)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +68,17 @@ func (b *Blumfield) LoadTokensFromFile() error {
 }
 
 func (b *Blumfield) Start(ctx context.Context) error {
+	// Loadig Random User-Agent
+	if b.Config.Settings.RandomAgent {
+		ua, err := b.tools.GetRandomUserAgent("config/user_agent.txt")
+		if err != nil {
+			return err
+		}
+		b.BaseHeaders["User-Agent"] = ua
+	} else {
+		b.log.Info("Using default User-Agent.")
+	}
+
 	// Loading auth tokens
 	if err := b.LoadTokensFromFile(); err != nil {
 		b.log.Error("Error loading tokens: ", err)
